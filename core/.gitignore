@@ -1,6 +1,6 @@
-# Virtual Environment
+# Virtual Environment  *.pyc ve __pycache__/: Python'un kodları hızlı çalıştırmak için arkada oluşturduğu geçici önbellek dosyalarıdır.
 venv/
-*.pyc
+*.pyc    
 __pycache__/
 
 # Database & Local Settings
