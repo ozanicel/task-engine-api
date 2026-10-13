@@ -12,6 +12,7 @@ from django.contrib.auth.models import User #Djangonun dahili user modeli
 # 1.  Category TANIM
 class Category(models.Model):
     name = models.CharField(max_length=100)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -39,6 +40,7 @@ class Task(models.Model):
         blank=True,
         related_name='tasks'
     )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
