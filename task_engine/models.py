@@ -26,6 +26,12 @@ class Task(models.Model):
         IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
         DONE = 'DONE', 'Done'
 
+    class Priority(models.TextChoices):
+        LOW= 'LOW', 'Low'
+        MEDIUM= 'MEDIUM', 'Medium'
+        HIGH = 'HIGH', 'High'
+###########
+
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     status = models.CharField(
@@ -33,6 +39,17 @@ class Task(models.Model):
         choices=StatusChoices.choices,
         default=StatusChoices.TODO
     )
+#############
+
+    priority = models.CharField(
+        max_length=10,
+        choices=Priority.choices,
+        default=Priority.MEDIUM
+    )
+    due_date = models.DateTimeField(blank=True, null=True)
+
+############
+
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,

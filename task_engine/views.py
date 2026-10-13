@@ -18,7 +18,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
      def get_queryset(self):
         # Sadece giriş yapan kullanıcının kategorilerini listele
         return Category.objects.filter(owner=self.request.user)
-
+     
      def perform_create(self, serializer):
         # Kategoriyi oluşturanı otomatik ata
         serializer.save(owner=self.request.user)
@@ -30,7 +30,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     # Filtreleme, Arama ve Sıralama Yettenekleri
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields =['status', 'category'] #Birebir eşleme
+    filterset_fields =['priority','status', 'category'] #Birebir eşleme
     search_fields = ['title','description']  #metin içi arma yapılcak alanlar
     ordering_fields = ['created_at','title'] #sıralama yapılabilecek alanlar
 
