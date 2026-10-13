@@ -19,6 +19,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     search_fields = ['title','description']  #metin içi arma yapılcak alanlar
     ordering_fields = ['created_at','title'] #sıralama yapılabilecek alanlar
 
+    def perform_create(self, serializer):
+         serializer.save(owner=self.request.user)
+
+
 
 
 

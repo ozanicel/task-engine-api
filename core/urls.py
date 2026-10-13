@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('task_engine.urls')), # API rotamız burası
+    path('api-auth/', include('rest_framework.urls')), #DRF'in kendi içinde hazır olarak tuttuğu kullanıcı adı/şifre giriş ekranını projemizin rotalarına tanıttım ve login butonu geldi
 ]

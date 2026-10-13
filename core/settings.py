@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'task_engine',
+    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -135,5 +136,14 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-    ]
+    ], 
+    #Oturum ve token tabanlı kimlik doğrulama sınıfları:                       KULLANILAN SINIF İSİMLERİ STANDART İSİMLER
+    'DEFAULT_AUTHENTICATION_CLASSES':[
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication'
+    ],
+    # İzinler: Herkes okuyabilir, sadece giriş yapanlar yazabilir/silebilir:
+    'DEFAULT_PERMISSION_CLASSES':[
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly'
+    ],
 }
