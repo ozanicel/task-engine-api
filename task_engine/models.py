@@ -30,6 +30,7 @@ class Task(models.Model):
         LOW= 'LOW', 'Low'
         MEDIUM= 'MEDIUM', 'Medium'
         HIGH = 'HIGH', 'High'
+        
 ###########
 
     title = models.CharField(max_length=255)
