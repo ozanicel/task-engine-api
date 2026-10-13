@@ -141,13 +141,23 @@ REST_FRAMEWORK = {
     #Oturum ve token tabanlı kimlik doğrulama sınıfları:                       KULLANILAN SINIF İSİMLERİ STANDART İSİMLER
     'DEFAULT_AUTHENTICATION_CLASSES':[
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication'
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     # İzinler: Herkes okuyabilir, sadece giriş yapanlar yazabilir/silebilir:
     'DEFAULT_PERMISSION_CLASSES':[
         'rest_framework.permissions.IsAuthenticatedOrReadOnly'
     ],
     'DEFAULT_SCHEMA_CLASS':'drf_spectacular.openapi.AutoSchema',
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT={
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Erişim anahtarının süresi
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Yenileme anahtarının süresi 
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 SPECTACULAR_SETTINGS ={
