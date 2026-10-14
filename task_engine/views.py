@@ -8,6 +8,7 @@ from rest_framework import generics
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer
+from rest_framework.pagination import PageNumberPagination
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -32,10 +33,15 @@ class TaskViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields =['priority','status', 'category'] #Birebir eşleme
     search_fields = ['title','description']  #metin içi arma yapılcak alanlar
-    ordering_fields = ['created_at','title'] #sıralama yapılabilecek alanlar
+    ordering_fields = ['created_at', 'due_date', 'priority', 'status', 'title'] #sıralama yapılabilecek alanlar
+    ordering = ['-created_at']
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
-         return Task.objects.filter(owner=self.request.user)
+         user =self.request.user
+         if user.is_authenticated:
+             return Task.objects.filter(owner=user)
+         return  Task.objects.none()
 
     def perform_create(self, serializer):
          serializer.save(owner=self.request.user)

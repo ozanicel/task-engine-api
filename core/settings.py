@@ -148,6 +148,10 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES':[
         'rest_framework.permissions.IsAuthenticatedOrReadOnly'
     ],
+    # Sayfa ayarları
+    'DEFAULT_PAGINATION_CALASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE':10, # her sayfada 10 öge
+    
     'DEFAULT_SCHEMA_CLASS':'drf_spectacular.openapi.AutoSchema',
 }
 

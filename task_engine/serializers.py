@@ -21,8 +21,10 @@ class TaskSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get('request')
-        if request and hasattr(request,'user'):
+        if request and hasattr(request,'user') and request.user.is_authenticated:
             self.fields['category'].queryset = Category.objects.filter(owner=request.user)
+        else:
+            self.fields['category'].queryset = Category.objects.none()
 
 
 class RegisterSerializer(serializers.ModelSerializer):
