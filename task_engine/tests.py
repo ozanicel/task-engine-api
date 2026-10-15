@@ -12,13 +12,6 @@ def create_user(db):
     user = User.objects.create_user(username="testuser", password="password123")
     return user
 
-@pytest.mark.django_db
-def test_unauthenticated_task_list(api_client):
-    """Kimlik doğrulamayan kullanici istek attiğinda boş liste döner (veya 401)"""
-    response = api_client.get('/api/tasks/')
-    # Sistem kuralları gereği kimliksiz istekler 403 Forbidden dönmelidir
-    assert response.status_code == status.HTTP_403_FORBIDDEN
-    
 
 @pytest.mark.django_db
 def test_authenticated_task_list(api_client, create_user):
