@@ -133,7 +133,7 @@ MAILERS = {
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKEDNS':[
+    'DEFAULT_FILTER_BACKENDS':[
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
@@ -146,10 +146,10 @@ REST_FRAMEWORK = {
     ],
     # İzinler: Herkes okuyabilir, sadece giriş yapanlar yazabilir/silebilir:
     'DEFAULT_PERMISSION_CLASSES':[
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly'
+        'rest_framework.permissions.IsAuthenticated'
     ],
     # Sayfa ayarları
-    'DEFAULT_PAGINATION_CALASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE':10, # her sayfada 10 öge
     
     'DEFAULT_SCHEMA_CLASS':'drf_spectacular.openapi.AutoSchema',

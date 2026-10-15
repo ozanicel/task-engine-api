@@ -16,9 +16,9 @@ def create_user(db):
 def test_unauthenticated_task_list(api_client):
     """Kimlik doğrulamayan kullanici istek attiğinda boş liste döner (veya 401)"""
     response = api_client.get('/api/tasks/')
-    # Eğer views.py içinde Task.objects.none() döndürüyorsak status 200 döner:
-    assert response.status_code == status.HTTP_200_OK
-    assert response.data['results'] == []
+    # Sistem kuralları gereği kimliksiz istekler 403 Forbidden dönmelidir
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    
 
 @pytest.mark.django_db
 def test_authenticated_task_list(api_client, create_user):
@@ -26,3 +26,153 @@ def test_authenticated_task_list(api_client, create_user):
     api_client.force_authenticate(user=create_user)
     response = api_client.get('/api/tasks/')
     assert response.status_code == status.HTTP_200_OK
+
+@pytest.mark.django_db
+def test_create_category(api_client, create_user):
+    """Giriş yapmiş kullanici yeni kategori oluşturabilir"""
+    api_client.force_authenticate(user=create_user)
+    response = api_client.post('/api/categories/', {'name': 'İş'})
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['name'] == 'İş'
+
+@pytest.mark.django_db
+def test_task_isolation(api_client):
+    """bir kullaninin görevlerini baska kullanici göremez(Multi-tenant izolasyonu)"""
+    from .models import Task
+
+    #1- birinci kullanıcıyi ve ona ait görev oluşturalım
+    user1= User.objects.create_user(username="user1", password="password123")
+    Task.objects.create(title="user1 in gizli görevi", owner=user1)
+
+    # 2- İkinci kullanıcıyı  ve onunla giriş yapalım
+    user2 = User.objects.create_user(username="user2", password="password123")
+    api_client.force_authenticate(user=user2)
+
+    # 3- User2 görev listesini çektiğinde sonuç boş dönmeli (izolasyon testi)
+    response = api_client.get('/api/tasks/')
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data['results']) == 0
+
+
+@pytest.mark.django_db
+def test_create_task(api_client, create_user):
+    """Giriş yapmiş kullanici  kendi kategorisine bağli yeni bir görev oluşturabilir"""
+    from .models import Category
+
+    # 1. Önce kullanıcıya ait bir kategori oluşturalım
+    category = Category.objects.create(name="Yazilim", owner=create_user)
+    # 2. Kullanıcıyı giriş yapalım
+    api_client.force_authenticate(user=create_user)
+    # 3. Görev oluşturalım
+    payload ={
+        "title": "görev oluşturma test kontrol",
+        "description": "Pytest test yaziyorum",
+        "priority": "HIGH",
+        "status": "IN_PROGRESS",
+        "category": category.id
+    }
+    response = api_client.post('/api/tasks/', payload, format='json')
+    print("HATA DETAYI:", response.data)
+    #doğrulamala
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['title'] == "görev oluşturma test kontrol"
+    assert response.data['category'] == category.id
+
+@pytest.mark.django_db
+def test_update_task(api_client, create_user):
+    """giriş yapmiş kullanici kendi görevini güncelleyebilir"""
+    from .models import Task, Category
+
+    #1- ilk olarka kategori ve görev oluşturalım.
+    category = Category.objects.create(name="İş", owner=create_user)
+    task = Task.objects.create(
+        title="Eski Başlik",
+        priority="HIGH",
+        status="IN_PROGRESS",
+        category=category,
+        owner=create_user
+    )
+    # 2- kullanıcı ile giriş
+    api_client.force_authenticate(user=create_user)
+    #3-Güncelleme verisi (payload) hazırlayalım
+    payload = {
+        "title": "Yeni Güncel Başlik",
+        "description": "Açiklama eklendi",
+        "priority": "HIGH",
+        "status": "TODO",
+        "category": category.id
+    }
+    # 4. PUT isteği atalım
+    response = api_client.put(f'/api/tasks/{task.id}/', payload, format='json')
+    # 5. Doğrulamalar
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['title'] == "Yeni Güncel Başlik"
+
+@pytest.mark.django_db
+def test_delete_task(api_client, create_user):
+    """Giriş yapmiş kullanici kendi görevini silebilir"""
+    from .models import Task, Category
+    
+    # 1. Kategori ve görev oluşturalım
+    category = Category.objects.create(name="Kişisel", owner=create_user)
+    task = Task.objects.create(
+        title="Silinecek Görev",
+        priority="LOW",
+        status="TODO",
+        category=category,
+        owner=create_user
+    )
+
+    # 2. Giriş yapalım
+    api_client.force_authenticate(user=create_user)
+    
+    # 3. DELETE isteği atalım
+    response = api_client.delete(f'/api/tasks/{task.id}/')
+    # 4. Doğrulama
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert Task.objects.filter(id=task.id).count() == 0
+
+
+
+@pytest.mark.django_db
+def test_unauthenticated_user_cannot_access_tasks(api_client):
+    """Giriş yapmamiş kullanici görev listesine erişemez"""
+    response = api_client.get('/api/tasks/')
+    # Kimliği doğrulanmamış istekler 401 Unauthorized dönmelidir
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+def test_user_cannot_modify_other_users_task(api_client, create_user):
+    """Bir kullanici, başka bir kullaniciya ait görevi güncelleyemez"""
+    from django.contrib.auth.models import User
+    from .models import Task, Category
+    
+    # 1. Sistemde ikinci bir kullanıcı (başka biri) oluşturalım
+    other_user = User.objects.create_user(username="hackeruser", password="password123")
+    
+    # 2. O diğer kullanıcıya ait bir kategori ve görev oluşturalım
+    other_category = Category.objects.create(name="Gizli Kategori", owner=other_user)
+    other_task = Task.objects.create(
+        title="Başkasinin Görevi",
+        priority="HIGH",
+        status="TODO",
+        category=other_category,
+        owner=other_user
+    )
+    
+    # 3. Biz kendi test kullanıcımız (`create_user`) ile giriş yapalım
+    api_client.force_authenticate(user=create_user)
+    
+    # 4. Başkasının görevini güncellemeye çalışalım
+    payload = {
+        "title": "Çaldim Görevi",
+        "priority": "HIGH",
+        "status": "TODO",
+        "category": other_category.id
+    }
+    response = api_client.put(f'/api/tasks/{other_task.id}/', payload, format='json')
+    
+    # 5. Sistem ya 403 (Yasaklı) ya da 404 (Bulunamadı - güvenlik için verinin varlığını bile gizleyebilir) dönmelidir
+    assert response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+
