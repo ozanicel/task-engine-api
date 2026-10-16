@@ -1,11 +1,10 @@
 import re
 from django.contrib.auth.password_validation import validate_password as django_validate_password
-
 from rest_framework import serializers
 from .models import Category, Task
-
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
+from .models import UserProfile
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,5 +54,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         # Kullanıcı kayıt olduğu anda onun için bir Token üretiyoruz
         Token.objects.create(user=user)
         return user
-
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['profile_picture']
 

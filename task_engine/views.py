@@ -4,11 +4,13 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Category, Task
 from .serializers import CategorySerializer, TaskSerializer
 
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer
 from rest_framework.pagination import PageNumberPagination
+from .models import UserProfile
+from .serializers import UserProfileSerializer
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -50,6 +52,13 @@ class RegisterView(generics.CreateAPIView):
      queryset = User.objects.all()
      serializer_class = RegisterSerializer
      permission_classes=[AllowAny]#Giriş yapmış herkes kayıt olabilsin diye
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.profile
 
 
 

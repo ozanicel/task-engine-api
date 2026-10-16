@@ -6,3 +6,4 @@ tzdata==2026.4
 django-filter
 drf-spectacular
 djangorestframework-simplejwt
+Pillow

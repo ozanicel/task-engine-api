@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 from django.urls import reverse
+import io
+from PIL import Image
 
 @pytest.fixture
 def api_client():
@@ -213,3 +215,44 @@ class PasswordValidationTests(APITestCase):
         response = self.client.post(self.register_url, data)
         print("RESPONSE DATA:", response.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+@pytest.mark.django_db
+class TestUserProfilePicture:
+    def test_upload_profile_picture(self, client):
+        """Kayit olurken veya profil güncellerken fotoğraf yüklenebilmeli"""
+
+        # Test için geçici küçük bir görsel (resim) oluşturalım
+        file = io.BytesIO()
+        image = Image.new('RGB', (100, 100), color='red')
+        image.save(file, 'jpeg')
+        file.seek(0)
+
+        user = User.objects.create_user(username="picuser", password="ValidPassword123")
+        client.force_authenticate(user=user)
+
+@pytest.mark.django_db
+class TestUserProfilePicture:
+    def test_upload_profile_picture(self, client):
+        # 1. Bellekte geçici küçük bir test görseli oluşturalım (Pillow kullanarak)
+        client = APIClient()
+        
+        file = io.BytesIO()
+        image = Image.new('RGB', (100, 100), color='blue')
+        image.save(file, format='jpeg')
+        file.seek(0)
+        file.name = 'test_avatar.jpg'
+
+        # 2. Test kullanıcısı oluşturalım ve authenticate edelim
+        user = User.objects.create_user(username="picuser", password="ValidPassword123")
+        client.force_authenticate(user=user)
+
+        # 3. Profil endpoint'ine PATCH isteği atalım
+        url = reverse('user-profile')
+        response = client.patch(url, {"profile_picture": file}, format='multipart')
+
+        assert response.status_code == status.HTTP_200_OK
+
+        #Veritabanında fotoğrafın kaydedildiğini kontrol edelim
+        user.profile.refresh_from_db()
+        assert user.profile.profile_picture.name is not None
