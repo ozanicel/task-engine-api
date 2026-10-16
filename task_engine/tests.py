@@ -2,6 +2,8 @@ import pytest
 from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
+from django.urls import reverse
 
 @pytest.fixture
 def api_client():
@@ -169,3 +171,45 @@ def test_user_cannot_modify_other_users_task(api_client, create_user):
     # 5. Sistem ya 403 (Yasaklı) ya da 404 (Bulunamadı - güvenlik için verinin varlığını bile gizleyebilir) dönmelidir
     assert response.status_code in [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
 
+#######################################################################################################
+@pytest.mark.django_db
+class PasswordValidationTests(APITestCase):
+    def setUp(self):
+        self.register_url = reverse('register')
+
+    def test_password_too_short(self):
+        data = {
+            "username": "testuser1",
+            "emial": "test1@example.com",
+            "password":"Ab1"
+        }
+        response = self.client.post(self.register_url,data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_password_missing_number(self):
+        data = {
+                    "username": "testuser2",
+                    "emial": "test2@example.com",
+                    "password":"onlyLetterPassword"
+                }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_password_missing_letter(self):
+        data = {
+            "username": "testuser3",
+            "email": "test3@example.com",
+            "password": "12345678"  
+        }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_valid_password(self):
+        data = {
+            "username": "testuser4",
+            "email": "test4@example.com",
+            "password": "ValidPassword123"  # Kurallara uygun
+        }
+        response = self.client.post(self.register_url, data)
+        print("RESPONSE DATA:", response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)

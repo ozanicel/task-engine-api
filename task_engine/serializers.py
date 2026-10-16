@@ -1,3 +1,6 @@
+import re
+from django.contrib.auth.password_validation import validate_password as django_validate_password
+
 from rest_framework import serializers
 from .models import Category, Task
 
@@ -33,6 +36,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model= User
         fields= ['id', 'username', 'email', 'password']
+
+    def validate_password(self,value):
+        django_validate_password(value)
+
+        if not re.search(r'[A-Za-z]',value) or not re.search(r'[0-9]' ,value):
+            raise serializers.ValidationError("Şifre en az bir harf (A-Z veya a-z) ve bir rakam (0-9) içermelidir.")
+        return value
+
 
     def create(self, validated_data):
         # Kullanıcıyı güvenli bir şekilde şifreyi hashleyerek oluştur
