@@ -72,10 +72,10 @@ class Task(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
 
     def __str__(self):
-        return f"{self.user.username} Profile"
+        return f"{self.user.username} - Profile"
 
 # Kullanıcı ilk kez oluşturulduğunda otomatik profil oluşturan sinyal:
 @receiver(post_save, sender=User)

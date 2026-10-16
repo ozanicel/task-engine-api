@@ -1,10 +1,12 @@
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 import re
 from django.contrib.auth.password_validation import validate_password as django_validate_password
 from rest_framework import serializers
-from .models import Category, Task
+from .models import Category, Task, UserProfile
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
-from .models import UserProfile
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,8 +57,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         Token.objects.create(user=user)
         return user
     
+
 class UserProfileSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = UserProfile
         fields = ['profile_picture']
-
+        
+    extra_kwargs ={
+        'profile_picture': {'required': False}
+    }

@@ -1,16 +1,17 @@
 from rest_framework import viewsets
+from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import Category, Task
-from .serializers import CategorySerializer, TaskSerializer
+from .models import Category, Task, UserProfile
+from .serializers import CategorySerializer, TaskSerializer,UserProfileSerializer
 
 from rest_framework import generics, permissions
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer
 from rest_framework.pagination import PageNumberPagination
-from .models import UserProfile
-from .serializers import UserProfileSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -56,9 +57,36 @@ class RegisterView(generics.CreateAPIView):
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_object(self):
-        return self.request.user.profile
+        # Kullanıcının profili varsa getirir, yoksa otomatik olarak yeni bir tane oluşturur
+        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
+        return profile
+
+    # SADECE PATCH İSTEĞİ İÇİN SWAGGER'I ZORLUYORUZ
+    @extend_schema(
+        operation_id='upload_profile_picture',
+        request={
+            'multipart/form-data': {
+                'type': 'object',
+                'properties': {
+                    'profile_picture': {
+                        'type': 'string',
+                        'format': 'binary'  # İşte bu kısım Swagger'a dosya butonu çıkarmasını söyler!
+                    }
+                }
+            }
+        }
+    )
+
+    def patch(self, request, *args, **kwargs):
+        return super().patch(request, *args, **kwargs)
+
+    # PUT İSTEĞİNİ GİZLEYEBİLİRİZ VEYA AYNI ŞEKİLDE UYARLAYABİLİRİZ (Opsiyonel)
+    @extend_schema(exclude=True) 
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)
 
 
 
