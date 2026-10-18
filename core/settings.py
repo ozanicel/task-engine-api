@@ -128,11 +128,6 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS':[
@@ -195,3 +190,18 @@ AUTH_PASSWORD_VALIDATORS =[
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+
+MAILERS = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {
+            "host": "smtp.gmail.com",
+            "port": 587,
+            "use_tls": True,
+            "username": "ozanicel3326@gmail.com",
+            "password": "mwocdbxbhoysjwbu",
+        },
+    }
+}

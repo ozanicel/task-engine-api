@@ -1,9 +1,19 @@
 from django.db import models
-from django.contrib.auth.models import User #Djangonun dahili user modeli
+from django.contrib.auth.models import User #Djangonun  user modeli
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+import datetime
+#----------------------------------------------------------------
+# class Meta: Nedir?
+# Django'da modellerin kendi alanları (name, owner vb.) dışında, veritabanı tablosunun genel davranışlarını
+# ayarlamak için kullandığımız özel bir alandır. Tablo adı, sıralama kuralları veya kısıtlamalar buraya yazılır.
 
-# Create your models here.
+# constraints (Kısıtlamalar):
+# Veritabanına "şu kurala kesinlikle uyulacak, uyulmayan veriyi kaydetme" dediğimiz yerdir.
+
+
+#----------------------------------------------------------------
 
 # models.Model Django'ya şu emri verir:  
 # Bu sadece sıradan bir Python sınıfı değil. Bu sınıfı veritabanında task_engine_task isimli bir tabloya dönüştür.
@@ -92,3 +102,16 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+class OTP(models.Model):
+    user =models.OneToOneField(User, on_delete=models.CASCADE)  #OneToOneField: Bir kullanıcının aynı anda sadece bir tane aktif doğrulama kodu olmasını sağlar.
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        # Kodun geçerlilik süresini 5 dakika olarak ayarlıyoruz
+        return self.created_at >= timezone.now() - datetime.timedelta(minutes=5)
+
+    def __str__(self):
+        return f"{self.user.username} - OTP Kodu"
+    

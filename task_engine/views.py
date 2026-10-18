@@ -12,7 +12,12 @@ from django.contrib.auth.models import User
 from .serializers import RegisterSerializer
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import OTP
+from .serializers import OTPVerifySerializer
+from .utils import generate_otp, send_otp_email
 
 class CategoryViewSet(viewsets.ModelViewSet):
      queryset = Category.objects.all() #View'e "Veritabanından hangi verileri çekeceksin?" sorusunun cevabıdır.
@@ -50,9 +55,35 @@ class TaskViewSet(viewsets.ModelViewSet):
          serializer.save(owner=self.request.user)
 
 class RegisterView(generics.CreateAPIView):
-     queryset = User.objects.all()
-     serializer_class = RegisterSerializer
-     permission_classes=[AllowAny]#Giriş yapmış herkes kayıt olabilsin diye
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        username = request.data.get("username")
+        email = request.data.get("email")
+
+        # Aynı e-posta veya kullanıcı adı ile daha önce açılmış pasif hesapları bul ve tamamen sil
+        User.objects.filter(email=email, is_active=False).delete()
+        User.objects.filter(username=username, is_active=False).delete()
+
+        # Eğer hala aktif (zaten onaylanmış) bir kullanıcı varsa hata döndür
+        if User.objects.filter(email=email, is_active=True).exists() or User.objects.filter(username=username, is_active=True).exists():
+            return Response(
+                {"error": "Bu kullanici adi veya e-posta zaten kullanimda ve aktif."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        user.is_active = False
+        user.save()
+
+        otp_kodu = generate_otp()
+        OTP.objects.create(user=user, code=otp_kodu)
+        send_otp_email(user.email, otp_kodu)
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
@@ -91,3 +122,31 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 
 
+
+class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        code = str(request.data.get("code")).strip()
+
+        if not email or not code:
+            return Response({"error": "E-posta ve kod alanlari zorunludur."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # E-postaya ait aktif olmayan kullanıcıyı bul
+        user = User.objects.filter(email=email, is_active=False).first()
+        if not user:
+            return Response({"error": "Bu e-posta adresine sahip doğrulanmayi bekleyen kullanici bulunamadi."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        otp_record = OTP.objects.filter(user=user).last()
+        if not otp_record:
+            return Response({"error": "Size ait bir doğrulama kodu bulunamadi."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Karşılaştırma
+        if str(otp_record.code) == code:
+            user.is_active = True
+            user.save()
+            OTP.objects.filter(user=user).delete()
+            return Response({"mesaj": "E-posta adresiniz başariyla doğrulandi!"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Hatali doğrulama kodu."}, status=status.HTTP_400_BAD_REQUEST)

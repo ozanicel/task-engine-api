@@ -67,3 +67,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     extra_kwargs ={
         'profile_picture': {'required': False}
     }
+
+class OTPVerifySerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=6, min_length=6, help_text="E-posta gelen 6 haneli kod")
+    
