@@ -17,6 +17,12 @@ class Category(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
     description = models.TextField(blank=True, null=True)
 
+    class Meta:
+        # Bu kural sayesinde aynı kullanıcı aynı isimde birden fazla kategori açamaz ÖNEMLİ!
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'name'], name='unique_user_category')
+        ]
+
     def __str__(self):
         return self.name
 

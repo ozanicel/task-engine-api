@@ -43,7 +43,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
          user =self.request.user
          if user.is_authenticated:
-             return Task.objects.filter(owner=user)
+             return Task.objects.filter(owner=self.request.user)
          return  Task.objects.none()
 
     def perform_create(self, serializer):
