@@ -1,6 +1,5 @@
 from rest_framework import viewsets
 from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Category, Task, UserProfile
@@ -18,6 +17,11 @@ from rest_framework import status
 from .models import OTP
 from .serializers import OTPVerifySerializer
 from .utils import generate_otp, send_otp_email
+from rest_framework.decorators import api_view, permission_classes
+from .models import Friendship
+from .serializers import FriendRequestSerializer
+from django.db.models import Q
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
      queryset = Category.objects.all() #View'e "Veritabanından hangi verileri çekeceksin?" sorusunun cevabıdır.
@@ -150,3 +154,73 @@ class VerifyOTPView(APIView):
             return Response({"mesaj": "E-posta adresiniz başariyla doğrulandi!"}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Hatali doğrulama kodu."}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+
+def send_firend_request(request):
+    receiver_username = request.data.get('username')
+    if not receiver_username:
+        return Response({"error": "Kullanici adi gereklidir."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        receiver = User.objects.get(username=receiver_username)
+    except User.DoesNotExist:
+        return Response({"error:" "Kullanici bulunamadi." },status=status.HTTP_404_NOT_FOUND)
+
+    if receiver == request.user:
+        return Response({"error": "Kendine arkadaşlik isteği atamazsin."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if Friendship.objects.filter(sender=request.user, receiver=receiver).exists():
+        return Response({"error": "Bu kullaniciya zaten arkadaşlik isteği gönderdiniz."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if Friendship.objects.create(sender=request.user, receiver=receiver):
+        return Response({"message": "Arkadaşlik isteği başariyla gönderildi."}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_friend_requests(request):
+    #gelen ve durumu 'pending' olan istekleri alıyoruz
+    request = Friendship.objects.filter(receiver=request.user, status='pending')
+    serializer = FriendRequestSerializer(request, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def respond_friend_request(request, pk):
+    try:
+        #Sadece bana gelen istekleri getir
+        firend_request = Friendship.objects.get(pk=pk, receiver=request.user, status='pending')
+    except Friendship.DoesNotExist:
+        return Response({"error": "Böyle bir arkadaşlik isteği bulunamadi"}, status= status.HTTP_404_NOT_FOUND)
+
+    action = request.data.get('action') #accept veya reject gelebilir
+
+    if action == 'accept':
+        firend_request.status = 'accepted'
+        firend_request.save()
+        return Response({"message": "Arkadaşlik isteği kabul edildi"}, status=status.HTTP_200_OK)
+    elif action == 'reject':
+        firend_request.status = 'rejected'
+        firend_request.save()
+        return Response ({"message": "Arkadşlik isteği reddelidi"}, status=status.HTTP_200_OK)
+    else:
+        return Response({"error": "Geçersiz işlem. 'accept' veya 'reject' gönderin."},status=status.HTTP_400_BAD_REQUEST) 
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_friends(request):
+    
+    # Kullanıcının içinde olduğu ve kabul edilmiş tüm ilişkileri çekiyoruz
+    friendships = Friendship.objects.filter(
+        (Q(sender=request.user) | Q(receiver=request.user)) & Q(status='accepted')
+    )
+    #Karşı taraftaki kişilerin listesini ayıklamak için:
+    friends =[]
+    for f in friendships:
+        if f.sender == request.user:
+            friends.append(f.receiver.username)
+        else:
+            friends.append(f.sender.username)
+    return Response({"friends": friends}, status=status.HTTP_200_OK)

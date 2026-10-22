@@ -6,6 +6,7 @@ from rest_framework import serializers
 from .models import Category, Task, UserProfile
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
+from .models import Friendship
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -70,4 +71,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class OTPVerifySerializer(serializers.Serializer):
     code = serializers.CharField(max_length=6, min_length=6, help_text="E-posta gelen 6 haneli kod")
-    
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    sender_username = serializers.ReadOnlyField(source = 'sender.username')
+    receiver_username = serializers.ReadOnlyField(source ='receiver.username')
+
+    class meta:
+        model = Friendship
+        fields = ['id','sender','sender_username','reciver','reciver_username','status','created_at']
+        read_only_fields = ['sender', 'status', 'created_at']

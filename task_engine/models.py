@@ -4,6 +4,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 import datetime
+
+
 #----------------------------------------------------------------
 # class Meta: Nedir?
 # Django'da modellerin kendi alanları (name, owner vb.) dışında, veritabanı tablosunun genel davranışlarını
@@ -115,3 +117,22 @@ class OTP(models.Model):
     def __str__(self):
         return f"{self.user.username} - OTP Kodu"
     
+class Friendship(models.Model):
+    STATUS_CHOİCE = (
+        ('pending', 'Beklemede'),
+        ('accepted', 'Kabul Edildi'),
+        ('rejected', 'Reddedildi'),
+    )
+
+    #bunların herbiri database de ayrı ayrı column
+    sender = models.ForeignKey(User, related_name='sent_friend_request',on_delete=models.CASCADE)
+    receiver = models.ForeignKey(User, related_name='received_friend_request', on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOİCE, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Aynı iki kullanıcı arasında birden fazla aynı istek oluşmasını engellemek için
+        unique_together = ('sender', 'receiver')
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.reciver.username} ({self.status})"
