@@ -7,7 +7,7 @@ from .models import Category, Task, UserProfile
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from .models import Friendship
-
+from django.db.models import Q
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,20 +16,71 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['owner']
 
 class TaskSerializer(serializers.ModelSerializer):
-    category_name = serializers.ReadOnlyField(source= 'category.name')
+    category_name = serializers.ReadOnlyField(source='category.name')
+
+    assigned_to_usernames = serializers.SlugRelatedField(
+        many=True, 
+        queryset=User.objects.none(),  
+        slug_field='username', 
+        source='assigned_to', 
+        required=False
+    )
+    
     class Meta:
         model = Task
-        fields = ['id', 'title', 'description', 'status', 'priority', 'due_date', 'category','category_name', 'created_at', 'updated_at','owner' ]  #Dış dünyaya hangi alanların açılacağını belirler.
-        read_only_fields = ['id', 'created_at', 'updated_at','owner' ]
+        fields = [
+            'id', 'title', 'description', 'status', 'priority', 
+            'due_date', 'category', 'category_name', 
+            'created_at', 'updated_at', 'owner', 'assigned_to_usernames'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'owner']
 
-    # -- KATEGORİ eklenen hesap dışında başka hesapta görünmemesi için -- 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get('request')
-        if request and hasattr(request,'user') and request.user.is_authenticated:
-            self.fields['category'].queryset = Category.objects.filter(owner=request.user)
+        
+        user = None
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            user = request.user
+        
+        if user:
+            # 1. Kategori filtresi
+            self.fields['category'].queryset = Category.objects.filter(owner=user)
+            
+            # 2. Arkadaş filtresi
+            friendships = Friendship.objects.filter(
+                (Q(sender=user) | Q(receiver=user)) & Q(status='accepted')
+            )
+            
+            friend_ids = []
+            for f in friendships:
+                if f.sender_id == user.id:
+                    friend_ids.append(f.receiver_id)
+                else:
+                    friend_ids.append(f.sender_id)
+            
+            # DRF HTML formunun queryset'i ve seçenekleri doğrudan tanıması için:
+            friends_qs = User.objects.filter(id__in=friend_ids)
+            self.fields['assigned_to_usernames'].queryset = friends_qs
+            # HTML form render motoru için iç seçenekleri güncelliyoruz:
+            self.fields['assigned_to_usernames'].child_relation.queryset = friends_qs
+
+            # --- YENİ GÜVENLİK KONTROLÜ ---
+            # Eğer bu bir güncelleme (PUT/PATCH) işlemliyse ve işlem yapan kullanıcı 
+            # görevin sahibi (owner) DEĞİLSE, atananlar alanını salt okunur (read-only) yapalım!
+            if self.instance and self.instance.owner != user:
+                self.fields['assigned_to_usernames'].read_only = True
+
+
         else:
-            self.fields['category'].queryset = Category.objects.none()
+            self.fields['category'].queryset = Category.objects.all()
+            self.fields['assigned_to_usernames'].queryset = User.objects.all()
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['owner'] = request.user
+        return super().create(validated_data)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -76,7 +127,7 @@ class FriendRequestSerializer(serializers.ModelSerializer):
     sender_username = serializers.ReadOnlyField(source = 'sender.username')
     receiver_username = serializers.ReadOnlyField(source ='receiver.username')
 
-    class meta:
+    class Meta:
         model = Friendship
-        fields = ['id','sender','sender_username','reciver','reciver_username','status','created_at']
+        fields = ['id','sender','sender_username','receiver','receiver_username','status','created_at']
         read_only_fields = ['sender', 'status', 'created_at']

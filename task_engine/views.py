@@ -21,6 +21,7 @@ from rest_framework.decorators import api_view, permission_classes
 from .models import Friendship
 from .serializers import FriendRequestSerializer
 from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -52,7 +53,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
          user =self.request.user
          if user.is_authenticated:
-             return Task.objects.filter(owner=self.request.user)
+             return Task.objects.filter(Q(owner=user) | Q(assigned_to=user)).distinct()
          return  Task.objects.none()
 
     def perform_create(self, serializer):
@@ -155,10 +156,21 @@ class VerifyOTPView(APIView):
         else:
             return Response({"error": "Hatali doğrulama kodu."}, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'username': {'type': 'string', 'description': 'Arkadaş eklenecek kullanicinin adi'}
+            },
+            'required': ['username']
+        }
+    }
+)
+@csrf_exempt        
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-
-def send_firend_request(request):
+def send_friend_request(request):
     receiver_username = request.data.get('username')
     if not receiver_username:
         return Response({"error": "Kullanici adi gereklidir."}, status=status.HTTP_400_BAD_REQUEST)
@@ -224,3 +236,26 @@ def list_friends(request):
         else:
             friends.append(f.sender.username)
     return Response({"friends": friends}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_task(request):
+    # Serializera dışarıdan gelen veriyi ve request context'ini veriyoruz
+    serializer = TaskSerializer(data=request.data, context={'request': request})
+
+    if serializer.is_valid():
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_tasks(request):
+    # Kullanıcının kendi oluşturduğu VEYA bir arkadaşının ona atadığı görevleri çekiyoruz
+    tasks = Task.objects.filter(Q(owner=request.user) | Q(assigned_to=request.user))
+    serializer = TaskSerializer(tasks, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+                                

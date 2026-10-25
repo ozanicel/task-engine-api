@@ -81,6 +81,8 @@ class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Task modeli içine eklenecek alan:
+    assigned_to = models.ManyToManyField(User, related_name='assigned_tasks', blank=True)
 
     # Görevin sahibi
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks') 
@@ -135,4 +137,4 @@ class Friendship(models.Model):
         unique_together = ('sender', 'receiver')
 
     def __str__(self):
-        return f"{self.sender.username} -> {self.reciver.username} ({self.status})"
+        return f"{self.sender.username} -> {self.receiver.username} ({self.status})"
