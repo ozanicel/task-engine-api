@@ -6,6 +6,7 @@ from rest_framework.test import APITestCase
 from django.urls import reverse
 import io
 from PIL import Image
+from .models import Task, Category, Friendship
 
 @pytest.fixture
 def api_client():
@@ -256,3 +257,54 @@ class TestUserProfilePicture:
         #Veritabanında fotoğrafın kaydedildiğini kontrol edelim
         user.profile.refresh_from_db()
         assert user.profile.profile_picture.name is not None
+
+
+class TaskAndFriendshipSecurityTests(APITestCase):
+    def setUp(self):
+        self.user_ozan = User.objects.create_user(username='ozan_test', password='password123')
+        self.user_doga = User.objects.create_user(username='doga_test', password='password123')
+        self.user_admin = User.objects.create_user(username='admin_test', password='password123')
+
+        Friendship.objects.create(sender=self.user_ozan,receiver=self.user_doga, status='accepted') # Ozan ile Doğa arkadaş olsun (accepted)
+
+        self.category = Category.objects.create(name='İşler',owner=self.user_ozan)# Ozan bir kategori oluştursun
+
+    def test_owner_can_assign_friend(self):
+        """Ozan, sadece arkadai olan Doğaya görev atayabilmeli. """
+        self.client.force_authenticate(user=self.user_ozan)
+
+        response = self.client.post('/api/tasks/',{
+            'title':'test görevi',
+            'description':'Açıklama',
+            'status': 'TODO',
+            'priority': 'HIGH',
+            'assigned_to_usernames': ['doga_test']
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task = Task.objects.get(id=response.data['id'])
+        self.assertIn(self.user_doga, task.assigned_to.all())
+
+    def test_non_owner_cannot_modify_assigned_users(self):
+        """Görevin sahibi olmayan bir kullanici  görevi güncellerken assigned_to listesini değiştirememeli."""
+
+        task = Task.objects.create(
+            title='oturum görevi',
+            owner=self.user_ozan
+        )
+        task.assigned_to.add(self.user_doga)
+
+        # Şimdi Doğa bu görevi düzenlemeye çalışıyor
+        self.client.force_authenticate(user=self.user_doga)
+        response = self.client.put(f'/api/tasks/{task.id}/', {
+            'title': 'Doğa Başliği Değiştirdi',
+            'status': 'IN_PROGRESS',
+            'priority': 'LOW',
+            'assigned_to_usernames': [] # Listeyi boşaltmaya çalışıyor
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Görev başlığı değişmeli ama owner olmadığı için assigned_to listesi korunmalı!
+        task.refresh_from_db()
+        self.assertEqual(task.title, 'Doğa Başliği Değiştirdi')
+        self.assertIn(self.user_doga, task.assigned_to.all())
