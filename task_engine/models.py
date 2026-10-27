@@ -138,3 +138,24 @@ class Friendship(models.Model):
 
     def __str__(self):
         return f"{self.sender.username} -> {self.receiver.username} ({self.status})"
+    
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES =(
+        ('friend_request', 'Friend Request'), #Arkadaşlık isteği geldiğinde.
+        ('friend_accepted', 'Friend Accepted'),#Arkadaşlık isteği kabul edildiğinde.
+        ('friend_rejected', 'Friend Rejected'),#Arkadaşlık isteği red edildiğinde.
+        ('task_assigned', 'Task Assigned'),#Bir göreve atandığında.
+        ('task_update_request', 'Task Update Request'), # İleride onay mekanizması için de kullanacağız, Birisi görevde düzenleme talep ettiğinde.
+    )
+
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actor_notifications',null=True, blank=True)
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=225)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False) #Kullanıcının bildirimi görüp görmediğini takip eder
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.recipient.username} - {self.title}"

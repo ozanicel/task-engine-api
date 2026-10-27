@@ -3,12 +3,11 @@ from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import Category, Task, UserProfile
-from .serializers import CategorySerializer, TaskSerializer,UserProfileSerializer
+from .serializers import CategorySerializer, TaskSerializer,UserProfileSerializer,RegisterSerializer
 
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions,mixins
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib.auth.models import User
-from .serializers import RegisterSerializer
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
@@ -22,6 +21,10 @@ from .models import Friendship
 from .serializers import FriendRequestSerializer
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
+
+from .models import Notification
+from .serializers import NotificationSerializer
+from rest_framework.viewsets import GenericViewSet
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -258,4 +261,16 @@ def list_tasks(request):
     tasks = Task.objects.filter(Q(owner=request.user) | Q(assigned_to=request.user))
     serializer = TaskSerializer(tasks, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class NotificationViewSet(mixins.ListModelMixin,
+                          mixins.RetrieveModelMixin,
+                          mixins.UpdateModelMixin,
+                          GenericViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')# Kullanıcı sadece KENDİ bildirimlerini görebilsin
+
                                 

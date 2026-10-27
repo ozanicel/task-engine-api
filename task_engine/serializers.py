@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from .models import Friendship
 from django.db.models import Q
+from .models import Notification
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,8 +69,9 @@ class TaskSerializer(serializers.ModelSerializer):
             # --- YENİ GÜVENLİK KONTROLÜ ---
             # Eğer bu bir güncelleme (PUT/PATCH) işlemliyse ve işlem yapan kullanıcı 
             # görevin sahibi (owner) DEĞİLSE, atananlar alanını salt okunur (read-only) yapalım!
-            if self.instance and self.instance.owner != user:
-                self.fields['assigned_to_usernames'].read_only = True
+            if self.instance and not hasattr(self.instance, '__iter__'):
+                if self.instance.owner != user:
+                    self.fields['assigned_to_usernames'].read_only = True
 
 
         else:
@@ -131,3 +133,11 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         model = Friendship
         fields = ['id','sender','sender_username','receiver','receiver_username','status','created_at']
         read_only_fields = ['sender', 'status', 'created_at']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    actor_username = serializers.ReadOnlyField(source='actor.username') # ID yerine doğrudan username göster
+
+    class Meta:
+        model = Notification
+        fields = ['id','actor_username','notification_type', 'title', 'message', 'is_read', 'created_at']
+        read_only_fields = ['id', 'actor_username', 'notification_type', 'title', 'message', 'created_at']

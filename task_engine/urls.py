@@ -2,11 +2,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import CategoryViewSet, TaskViewSet, RegisterView, UserProfileView
 from rest_framework.authtoken.views import obtain_auth_token
-from .views import VerifyOTPView ,send_friend_request, list_friend_requests, respond_friend_request, list_friends, create_task, list_tasks
+from .views import VerifyOTPView ,send_friend_request, list_friend_requests, respond_friend_request, list_friends, create_task, list_tasks,NotificationViewSet
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet, basename='category')
 router.register(r'tasks', TaskViewSet, basename='task')
+router.register(r'notifications', NotificationViewSet, basename='notification')
 
 urlpatterns=[
     path('register/', RegisterView.as_view(), name='register'), #bu path açıldığında RegisterView sınıfını çalıştırır
@@ -20,7 +21,5 @@ urlpatterns=[
     path('tasks/create/', create_task, name='create-task'),
     path('tasks/list/', list_tasks, name='list-tasks'),
     path('', include(router.urls)),
-
-
 
 ]
