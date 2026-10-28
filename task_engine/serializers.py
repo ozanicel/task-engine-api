@@ -3,7 +3,7 @@ from drf_spectacular.types import OpenApiTypes
 import re
 from django.contrib.auth.password_validation import validate_password as django_validate_password
 from rest_framework import serializers
-from .models import Category, Task, UserProfile
+from .models import Category, Task, UserProfile, TaskUpdateProposal
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from .models import Friendship
@@ -141,3 +141,43 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id','actor_username','notification_type', 'title', 'message', 'is_read', 'created_at']
         read_only_fields = ['id', 'actor_username', 'notification_type', 'title', 'message', 'created_at']
+
+
+class TaskUpdateProposalSerializer(serializers.ModelSerializer):
+
+    proposed_by= serializers.StringRelatedField(read_only=True)
+    status = serializers.CharField(read_only=True)
+    title = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    class Meta:
+        model = TaskUpdateProposal
+        fields = ['id', 'task', 'proposed_by', 'title', 'description','status', 'created_at']
+        read_only_fields = ['id','created_at']
+
+    def create(self, validated_data):
+        #Teklifi oluşturan kullanıcıyı otomatik olarak request.user yapıyoruz
+        request = self.context.get('request')
+        validated_data['proposed_by'] =request.user
+        validated_data['status'] = 'pending'
+        return super().create(validated_data)
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get('request')
+
+        if request and request.user.is_authenticated:
+            user = request.user
+            # Sadece başkasının sahibi olduğu ama bana atanmış görevler için teklif verebilirim!
+            self.fields['task'].queryset = Task.objects.filter(
+                assigned_to=user
+            ).exclude(owner=user).distinct()
+
+    def validate(self, attrs):
+        task = attrs.get('task')
+        title = attrs.get('title')
+
+        if task and not title:
+            attrs['title'] = task.title
+        return attrs
+    
+class ProposalRespondSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(choices=['approve', 'reject'])

@@ -147,6 +147,9 @@ class Notification(models.Model):
         ('friend_rejected', 'Friend Rejected'),#Arkadaşlık isteği red edildiğinde.
         ('task_assigned', 'Task Assigned'),#Bir göreve atandığında.
         ('task_update_request', 'Task Update Request'), # İleride onay mekanizması için de kullanacağız, Birisi görevde düzenleme talep ettiğinde.
+        ('task_proposal_approved', 'Task Proposal Approved'),
+        ('task_proposal_rejected', 'Task Proposal Rejected'),
+        
     )
 
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -159,3 +162,26 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.recipient.username} - {self.title}"
+
+class TaskUpdateProposal(models.Model):
+    STATUS_CHOICES=(
+        ('pending','Beklemede'),
+        ('approved','Onaylandi'),
+        ('rejected','Reddedildi'),
+    )
+
+    task=models.ForeignKey('Task', on_delete=models.CASCADE, related_name='update_propsals') # hangi görev        OKULDA GÖRDÜĞÜM REFERENCES gibi
+    proposed_by= models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_proposals') # hangi kullanıcının gönderdi
+
+    # related_name:Ters yönlü sorgulama yapmamızı sağlar.
+    # task nesnesinin üzerinden task.update_proposals.all() diyerek o göreve gelen tüm güncelleme tekliflerini anında listeleyebiliriz.
+    # ynı şekilde kullanıcı üzerinden de user.task_proposals.all() diyerek o kullanıcının yaptığı teklifleri çekebiliriz.
+
+    title= models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES,default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Teklif #{self.id} - {self.task.title} ({self.proposed_by.username})"
+

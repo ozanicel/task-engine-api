@@ -1,4 +1,6 @@
 from rest_framework import viewsets
+from django.db import models
+import django_filters
 from drf_spectacular.utils import extend_schema, OpenApiTypes, OpenApiParameter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -22,24 +24,34 @@ from .serializers import FriendRequestSerializer
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import Notification
-from .serializers import NotificationSerializer
+from .models import Notification, TaskUpdateProposal
+from .serializers import NotificationSerializer, TaskUpdateProposalSerializer,ProposalRespondSerializer
 from rest_framework.viewsets import GenericViewSet
+from rest_framework.decorators import action
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-     queryset = Category.objects.all() #View'e "Veritabanından hangi verileri çekeceksin?" sorusunun cevabıdır.
-     serializer_class = CategorySerializer #View'e "Çektiğin bu verileri dış dünyaya sunarken hangi dönüştürücüyü kullanacaksın?
-     permission_classes = [IsAuthenticated]
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
 
-     def get_queryset(self):
-        # Sadece giriş yapan kullanıcının kategorilerini listele
+    def get_queryset(self):
+        # Sadece giriş yapan kullanıcının kategorilerini getir
         return Category.objects.filter(owner=self.request.user)
-     
-     def perform_create(self, serializer):
-        # Kategoriyi oluşturanı otomatik ata
+    
+    def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+class TaskFilter(django_filters.FilterSet):
+    class Meta:
+        model = Task
+        fields = ['priority', 'status', 'category']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        user = self.request.user
+        if user.is_authenticated:
+            # Filtreleme formundaki kategori seçeneklerini sadece o kullanıcıya ait olanlarla kısıtlıyoruz!
+            self.filters['category'].queryset = Category.objects.filter(owner=user)
 
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all() #View'e "Veritabanından hangi verileri çekeceksin?" sorusunun cevabıdır.
@@ -47,6 +59,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     # Filtreleme, Arama ve Sıralama Yettenekleri
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = TaskFilter
     filterset_fields =['priority','status', 'category'] #Birebir eşleme
     search_fields = ['title','description']  #metin içi arma yapılcak alanlar
     ordering_fields = ['created_at', 'due_date', 'priority', 'status', 'title'] #sıralama yapılabilecek alanlar
@@ -273,4 +286,80 @@ class NotificationViewSet(mixins.ListModelMixin,
     def get_queryset(self):
         return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')# Kullanıcı sadece KENDİ bildirimlerini görebilsin
 
-                                
+
+class TaskUpdateProposalViewSet(viewsets.ModelViewSet):
+    queryset = TaskUpdateProposal.objects.all()
+    serializer_class = TaskUpdateProposalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        # Kullanıcı ya kendi yaptığı teklifleri görecek ya da kendi sahip olduğu görevlere gelen teklifleri onaylayacak/reddedecek
+        return TaskUpdateProposal.objects.filter(
+            models.Q(proposed_by=user) | models.Q(task__owner=user)
+        ).distinct()
+
+    #Görev sahibinin teklifi onaylama veya reddetme uç noktası: /api/proposals/<id>/respond/
+    @action(detail=True, methods=['post'],serializer_class=ProposalRespondSerializer,  url_path='respond', url_name='respond')
+    def respond(self, request, pk=None):
+        proposal = self.get_object()
+        task = proposal.task
+
+
+    # GÜVENLİK KONTROLÜ: Sadece görevin gerçek sahibi (owner) bu teklife yanıt verebilir!
+        if task.owner != request.user:
+            return Response(
+                {"detail": "Bu teklifi yanit verme yetkiniz yok. Sadece görev sahibi onaylayabilir."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        action_type = request.data.get('action') # 'approve' veya 'reject' bekliyoruz
+
+        if action_type == 'approve':
+            proposal.status ='approved'
+            proposal.save()
+
+            # Teklif onaylandığına göre, değişiklikleri asıl Task modeline işleyelim!
+            task.title = proposal.title
+            task.description = proposal.description
+            task.save()
+
+            Notification.objects.create(
+                recipient=proposal.proposed_by,
+                actor=request.user,
+                notification_type='task_proposal_approved',
+                title='Görev Güncelleme Teklifi Onaylandi',
+                message=f"{request.user.username}, '{task.title}' görevi için yaptiğin güncelleme teklifini onayladi."
+            )
+
+            return Response({"detail": "Teklif onaylandi ve görev güncellendi."})
+
+        elif action_type == 'reject':
+            proposal.status = 'rejected'
+            proposal.save()
+
+            Notification.objects.create(
+                recipent=proposal.proposed_by,
+                actor=request.user,
+                notification_type='task_proposal_rejected',
+                title='Görev Güncelleme Teklifi Reddedildi',
+                message=f"{request.user.username}, '{task.title}' görevi için yaptığın güncelleme teklifini reddetti."
+            )
+            return Response({"detail": "Teklif reddedildi."})
+
+        else:
+            return Response (
+                {"detail": "Geçersiz aksiyon. 'approve' veya 'reject' göndermelisiniz."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    def perform_create(self, serializer):
+        proposal = serializer.save()
+        task = proposal.task
+
+        if task.owner !=self.request.user:
+            Notification.objects.create(
+                recipient = task.owner,
+                notification_type='task_update_request',
+                title='Görev Güncelleme Talebi',
+                message=f"{self.request.user.username}, '{task.title}' görevi için bir güncelleme teklifi gönderdi."
+            )
