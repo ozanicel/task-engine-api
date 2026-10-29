@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 from django.urls import reverse
 import io
 from PIL import Image
-from .models import Task, Category, Friendship
+from .models import Task, Category, Friendship, TaskUpdateProposal
 
 @pytest.fixture
 def api_client():
@@ -308,3 +308,48 @@ class TaskAndFriendshipSecurityTests(APITestCase):
         task.refresh_from_db()
         self.assertEqual(task.title, 'Doğa Başliği Değiştirdi')
         self.assertIn(self.user_doga, task.assigned_to.all())
+
+@pytest.mark.django_db
+def test_task_update_proposal_title_autofill(api_client, create_user):
+#TaskUpdateProposal oluşturulurken title boş bırakılırsa, task'ın eski başlığı otomatik atanmali
+
+    other_user = User.objects.create_user(username="task_owner", password="password123")
+    category = Category.objects.create(name = "İş Kategorisi", owner=other_user)
+    task = Task.objects.create(
+        title="Orijinal Görev Başliği",
+        priority="HIGH",
+        status="TODO",
+        category=category,
+        owner=other_user
+    )
+    # Görevi test kullanıcımıza atayalım (böylece serializer queryset süzgecinden geçer)
+    task.assigned_to.add(create_user)
+
+    api_client.force_authenticate(user=create_user)
+    payload ={
+        "task": task.id,
+        "title": "", #boş
+        "description":"Başliği değiştirmeden sadece açiklama teklif ediyorum"
+    }
+    response = api_client.post('/api/proposals/', payload, format='json')
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.data['title'] == "Orijinal Görev Başliği"
+
+@pytest.mark.django_db
+def test_category_list_isolation(api_client):
+
+#Bir kullanici kategori listesini çektiğinde sadece kendi kategorilerini görmeli, başkasini göremez
+    user1= User.objects.create_user(username="catuser1",password="password123")
+    user2= User.objects.create_user(username="catuser2",password="password123")
+
+    Category.objects.create(name="User1'in Kategorisi",owner=user1)
+    Category.objects.create(name="User2'in Kategorisi",owner=user2)
+
+    api_client.force_authenticate(user=user1)
+    response = api_client.get('/api/categories/')
+
+# Gelen sonuçların sadece user1'e ait olduğunu doğrulayalım
+    results = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+    assert len(results) == 1
+    assert results[0]['name'] == "User1'in Kategorisi"

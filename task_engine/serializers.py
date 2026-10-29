@@ -163,10 +163,9 @@ class TaskUpdateProposalSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get('request')
-
-        if request and request.user.is_authenticated:
+# Eğer request ve user varsa filtrele, yoksa (test ortamında) queryset'i kısıtlama
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
             user = request.user
-            # Sadece başkasının sahibi olduğu ama bana atanmış görevler için teklif verebilirim!
             self.fields['task'].queryset = Task.objects.filter(
                 assigned_to=user
             ).exclude(owner=user).distinct()
