@@ -35,5 +35,9 @@ The primary goal of this project is to build a production-ready SaaS backend arc
 3. **Vercel Hosting:** Deploy the frontend on **Vercel** with global CDN distribution.
 4. **SaaS Subscription Flow:** Integrate a simulated tier upgrade (Free vs. Pro Plan) and credit card checkout flow.
 
+<img width="4534" height="3167" alt="Task_engine_ERD" src="https://github.com/user-attachments/assets/26eb7171-67c2-46f5-8aaf-68b5812eca39" />
+
+
+
 ---
 *Developed by [Ozan İçel](https://github.com/ozanicel)*
