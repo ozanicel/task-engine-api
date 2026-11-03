@@ -2,11 +2,16 @@
 venv/
 *.pyc    
 __pycache__/
+*.py[cod]
+*$py.class
 
 # Database & Local Settings
 db.sqlite3
+db.sqlite3-journal
 .env
 
 # IDE / System
 .vscode/
 .DS_Store
+
+.pytest_cache/
