@@ -4,6 +4,7 @@ from .views import CategoryViewSet, TaskViewSet, RegisterView, UserProfileView
 from rest_framework.authtoken.views import obtain_auth_token
 from .views import VerifyOTPView ,send_friend_request, list_friend_requests, respond_friend_request, list_friends, create_task, list_tasks,NotificationViewSet, TaskUpdateProposalViewSet
 
+
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet, basename='category')
 router.register(r'tasks', TaskViewSet, basename='task')

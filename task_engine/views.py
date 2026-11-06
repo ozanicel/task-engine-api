@@ -29,6 +29,9 @@ from .serializers import NotificationSerializer, TaskUpdateProposalSerializer,Pr
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.decorators import action
 
+from rest_framework.exceptions import PermissionDenied
+
+
 
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
@@ -74,6 +77,13 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
          serializer.save(owner=self.request.user)
+
+    #Owner olmadığımız assig edildiğimiz görevleri doğrudan güncelleyememek için yazılan kod
+    def perform_update(self, serializer):
+        task = self.get_object()
+        if task.owner != self.request.user:
+            raise PermissionDenied("Bu görevi doğrudan güncelleyemezsiniz, teklif (proposal) göndermelisiniz.")
+        serializer.save()
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
