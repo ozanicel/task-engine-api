@@ -1,0 +1,73 @@
+/* Giriş yapıldıktan sonra en üstte sabit kalan üst gezinme çubuğu */
+.top-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
+  box-sizing: border-box;
+  height: 60px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(212, 175, 106, 0.22);
+  backdrop-filter: blur(8px);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* En solda duran uygulama adı */
+.navbar-brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #e2c285;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Sağ tarafta kullanıcı adı ve Logout butonunu bir arada tutan grup */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Logout butonunun solunda görünen aktif kullanıcı adı rozeti */
+.navbar-username {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  background-color: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* En sağda duran çıkış (Logout) butonu */
+.navbar-logout-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 106, 0.35);
+  background-color: rgba(212, 175, 106, 0.12);
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.navbar-logout-btn:hover {
+  background-color: #d4af6a;
+  border-color: #d4af6a;
+  color: #0f172a;
+}
+
+.navbar-logout-btn:active {
+  transform: translateY(1px);
+}

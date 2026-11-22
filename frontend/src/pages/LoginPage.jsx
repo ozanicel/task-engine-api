@@ -47,6 +47,10 @@ export default function LoginPage() {
 
       // Access ve refresh token'ları localStorage'a kaydediyoruz
       setTokens(data.access, data.refresh);
+      // Giriş yapılan kullanıcı adını Navbar'da gösterebilmek için kaydediyoruz
+      if (username.trim()) {
+        localStorage.setItem("username", username.trim());
+      }
       // Başarılı giriş sonrası /tasks ekranına geçiyoruz
       navigate("/tasks");
     } catch {

@@ -1,0 +1,102 @@
+/* Üstte Navbar, altında Sidebar ve ana içerik alanından oluşan dikey iskelet */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+/* Navbar altında kalan yatay çalışma alanı (Sol Sidebar + Sağ İçerik) */
+.app-body {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+/* Sol gezinme paneli */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 20px 14px;
+  background-color: #0b1220;
+  border-right: 1px solid rgba(212, 175, 106, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Menü grubu başlığı */
+.sidebar-section-title {
+  padding: 4px 12px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+/* Sol menüdeki her bir gezinme bağlantısı */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.94rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(212, 175, 106, 0.08);
+  color: #f8fafc;
+}
+
+/* Aktif sayfanın vurgulu görünümü */
+.sidebar-link.is-active {
+  background-color: rgba(212, 175, 106, 0.16);
+  border-color: rgba(212, 175, 106, 0.4);
+  color: #e2c285;
+  font-weight: 600;
+}
+
+/* Sağ taraftaki ana içerik alanı */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 24px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* Küçük ekranlarda sidebar'ın üstte yatay/kompakt durması için duyarlı düzen */
+@media (max-width: 768px) {
+  .app-body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid rgba(212, 175, 106, 0.18);
+  }
+
+  .sidebar-section-title {
+    display: none;
+  }
+
+  .main-content {
+    padding: 20px 14px;
+  }
+}

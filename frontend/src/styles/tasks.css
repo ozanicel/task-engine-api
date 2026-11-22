@@ -1,0 +1,267 @@
+/* Görev panosu ana kapsayıcı — sağdaki boş alanı dengeli dolduracak genişlik */
+.tasks-container {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* "Görevler" üst başlık kartı — görev kartlarından farklı, vurgulu koyu lacivert + altın çizgi */
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #162442 0%, #101b33 100%);
+  border: 1px solid rgba(212, 175, 106, 0.42);
+  border-left: 4px solid #d4af6a;
+}
+
+.tasks-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #f8fafc;
+}
+
+.tasks-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+  background-color: #d4af6a;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+/* Filtreleme ve sıralama paneli — ayrı ve koyu çivit/lacivert ton */
+.tasks-filter-panel {
+  padding: 16px 22px;
+  border-radius: 14px;
+  background-color: #465f80;
+  border: 2px solid rgba(23, 55, 92, 0.39);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Görev kartları listesi */
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Tek bir görev kartı */
+.task-card {
+  padding: 18px 24px;
+  border-radius: 14px;
+  background-color: #111c33;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+}
+
+.task-card:hover {
+  border-color: rgba(212, 175, 106, 0.45);
+}
+
+/* Kart üst satırı: Başlık + Küçük aksiyon butonları */
+.task-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.task-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-title {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+/* Durum ve Öncelik rozetleri */
+.task-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.task-badge {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.badge-status {
+  background-color: rgba(212, 175, 106, 0.16);
+  border: 1px solid rgba(212, 175, 106, 0.38);
+  color: #e2c285;
+}
+
+.badge-priority {
+  background-color: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  color: #cbd5e1;
+}
+
+.badge-category {
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #7dd3fc;
+}
+
+/* Küçük Düzenle ve Sil butonları */
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.task-btn-sm {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.task-btn-edit {
+  background-color: rgba(212, 175, 106, 0.14);
+  border-color: rgba(212, 175, 106, 0.35);
+  color: #e2c285;
+}
+
+.task-btn-edit:hover {
+  background-color: #d4af6a;
+  color: #0f172a;
+}
+
+.task-btn-delete {
+  background-color: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fca5a5;
+}
+
+.task-btn-delete:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.task-btn-sm:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Görev açıklaması */
+.task-description {
+  margin: 0;
+  font-size: 0.93rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  background-color: #0b1220;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+/* Kart alt meta bilgileri (Bitiş tarihi, Atananlar, Oluşturulma) */
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  padding-top: 4px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.task-meta strong {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* Kart içi düzenleme formu */
+.task-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.task-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.task-edit-field input,
+.task-edit-field textarea,
+.task-edit-field select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background-color: #0b1220;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.task-edit-field input:focus,
+.task-edit-field textarea:focus,
+.task-edit-field select:focus {
+  outline: none;
+  border-color: #d4af6a;
+}
+
+.task-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.task-btn-save {
+  background-color: #d4af6a;
+  color: #0f172a;
+}
+
+.task-btn-save:hover {
+  background-color: #e2c285;
+}
+
+.task-btn-cancel {
+  background-color: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
+
+.task-btn-cancel:hover {
+  background-color: rgba(148, 163, 184, 0.25);
+  color: #f8fafc;
+}

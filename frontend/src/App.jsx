@@ -4,6 +4,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
+import TasksPage from "./pages/TasksPage";
+import CreateTaskPage from "./pages/CreateTaskPage";
 
 // Giriş yaptıktan sonra geçici olarak göreceğimiz yer tutucu bileşen (ileride asıl panel gelecek)
 function PlaceholderDashboard() {
@@ -25,6 +27,10 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/create" element={<CreateTaskPage />} />
+
+
         {/* /tasks adresine gidildiğinde geçici panel görünür */}
         <Route path="/tasks" element={<PlaceholderDashboard />} />
         {/* Yukarıdakiler dışında bilinmeyen bir yol girilirse /login'e yönlendirir */}
