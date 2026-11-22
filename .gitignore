@@ -16,3 +16,6 @@ db.sqlite3-journal
 .DS_Store
 
 .pytest_cache/
+
+node_modules/
+frontend/node_modules/

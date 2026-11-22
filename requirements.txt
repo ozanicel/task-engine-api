@@ -9,3 +9,4 @@ djangorestframework-simplejwt
 Pillow
 psycopg2-binary==2.9.9
 python-decouple==3.8
+django-cors-headers

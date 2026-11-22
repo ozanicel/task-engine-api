@@ -204,7 +204,7 @@ def send_friend_request(request):
     try:
         receiver = User.objects.get(username=receiver_username)
     except User.DoesNotExist:
-        return Response({"error:" "Kullanici bulunamadi." },status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Kullanici bulunamadi." },status=status.HTTP_404_NOT_FOUND)
 
     if receiver == request.user:
         return Response({"error": "Kendine arkadaşlik isteği atamazsin."}, status=status.HTTP_400_BAD_REQUEST)
@@ -212,8 +212,16 @@ def send_friend_request(request):
     if Friendship.objects.filter(sender=request.user, receiver=receiver).exists():
         return Response({"error": "Bu kullaniciya zaten arkadaşlik isteği gönderdiniz."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if Friendship.objects.create(sender=request.user, receiver=receiver):
-        return Response({"message": "Arkadaşlik isteği başariyla gönderildi."}, status=status.HTTP_201_CREATED)
+    Friendship.objects.create(sender=request.user, receiver=receiver)
+
+    Notification.objects.create(
+        recipient=receiver,
+        actor=request.user,
+        notification_type='friend_request',
+        title='Yeni Arkadaşlık İsteği',
+        message=f"{request.user.username} sana arkadaşlık isteği gönderdi.",
+    )   
+    return Response({"message": "Arkadaşlik isteği başariyla gönderildi."}, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
