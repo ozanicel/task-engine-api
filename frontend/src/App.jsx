@@ -6,6 +6,11 @@ import RegisterPage from "./pages/RegisterPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
 import TasksPage from "./pages/TasksPage";
 import CreateTaskPage from "./pages/CreateTaskPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import FriendsPage from "./pages/FriendsPage";
+import ProposalsPage from "./pages/ProposalsPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import ProfilePage from "./pages/ProfilePage";
 
 // Giriş yaptıktan sonra geçici olarak göreceğimiz yer tutucu bileşen (ileride asıl panel gelecek)
 function PlaceholderDashboard() {
@@ -29,6 +34,12 @@ export default function App() {
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/create" element={<CreateTaskPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/friends" element={<FriendsPage />} />
+        <Route path="/proposals" element={<ProposalsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        
 
 
         {/* /tasks adresine gidildiğinde geçici panel görünür */}

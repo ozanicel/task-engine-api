@@ -59,9 +59,10 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  // Arama, durum filtresi ve sıralama durumları (TaskViewSet ile uyumlu)
+  // Arama, durum filtresi, kategori filtresi ve sıralama durumları (TaskViewSet ile uyumlu)
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [ordering, setOrdering] = useState("-created_at");
 
   // Sayfa yüklenme ve hata durumları
@@ -102,6 +103,7 @@ export default function TasksPage() {
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.set("search", searchQuery.trim());
       if (statusFilter) params.set("status", statusFilter);
+      if (categoryFilter) params.set("category", categoryFilter);
       if (ordering) params.set("ordering", ordering);
 
       const queryString = params.toString();
@@ -133,9 +135,9 @@ export default function TasksPage() {
     }
 
     fetchTasks();
-  }, [navigate, searchQuery, statusFilter, ordering]);
+  }, [navigate, searchQuery, statusFilter, categoryFilter, ordering]);
 
-  // Düzenleme formundaki kategori seçimi için kategorileri bir kez çekiyoruz
+  // Filtreleme ve düzenleme seçim kutuları için kategorileri çekiyoruz
   useEffect(() => {
     async function fetchCategories() {
       try {
@@ -146,7 +148,7 @@ export default function TasksPage() {
           setCategories(list);
         }
       } catch {
-        // Kategoriler yüklenemezse düzenleme formu "Kategorisiz" seçeneğiyle çalışır
+        // Kategoriler yüklenemezse filtre ve düzenleme formları varsayılan seçenekle çalışır
       }
     }
 
@@ -200,7 +202,6 @@ export default function TasksPage() {
 
       const updated = await response.json().catch(() => ({}));
       if (!response.ok) {
-        // TaskViewSet.perform_update içindeki PermissionDenied mesajı burada yakalanır
         setErrorMessage(
           updated.detail ||
             "Görev güncellenemedi. Sadece sahibi olduğunuz görevleri doğrudan güncelleyebilirsiniz."
@@ -263,12 +264,13 @@ export default function TasksPage() {
           {!isLoading && <span className="tasks-count">{tasks.length} Görev</span>}
         </div>
 
-        {/* Arama, Durum Filtresi ve Sıralama Çubuğu */}
-        <div className="tasks-filter-panel" style={{ padding: "14px 18px" }}>
+        {/* Arama, Durum Filtresi, Kategori Filtresi ve Sıralama Çubuğu */}
+        <div className="tasks-filter-panel">
           <div className="task-edit-grid">
             <div className="task-edit-field">
-              <label>Ara (Başlık / Açıklama)</label>
+              <label htmlFor="filter-search">Ara (Başlık / Açıklama)</label>
               <input
+                id="filter-search"
                 type="text"
                 placeholder="Görev ara..."
                 value={searchQuery}
@@ -277,8 +279,9 @@ export default function TasksPage() {
             </div>
 
             <div className="task-edit-field">
-              <label>Durum</label>
+              <label htmlFor="filter-status">Durum</label>
               <select
+                id="filter-status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -290,8 +293,25 @@ export default function TasksPage() {
             </div>
 
             <div className="task-edit-field">
-              <label>Sırala</label>
+              <label htmlFor="filter-category">Kategori</label>
               <select
+                id="filter-category"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">Tüm Kategoriler</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="task-edit-field">
+              <label htmlFor="filter-ordering">Sırala</label>
+              <select
+                id="filter-ordering"
                 value={ordering}
                 onChange={(e) => setOrdering(e.target.value)}
               >
